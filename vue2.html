@@ -78,23 +78,31 @@
     </div>
 
     <script>
+        const { PDFDocument } = PDFLib
+        const fontkit = window.fontkit
         new Vue({
             el: '#app',
             data: {
                 pdfSrc: '',
                 formData: {
-                    FullName: '',
+                    FullName: 'ทดสอบ',
                     ID: '',
                     Gender: '',
                     Married: false,
                     City: '',
                     Language: 'English'
-                }
+                },
+                pdfDoc: null,
+                existingPdfBytes: null
             },
             mounted() {
                 this.displayPDF('fill-form.pdf')
             },
             methods: {
+                async getThaiFont() {
+                    const fontUrl = 'tahoma.ttf';
+                    return await fetch(fontUrl).then(res => res.arrayBuffer());
+                },
                 async arrayBufferToBase64(buffer) {
                     let binary = ''
                     const bytes = new Uint8Array(buffer)
@@ -105,75 +113,50 @@
                 },
                 async displayPDF(pdfPath) {
                     try {
-                        const { PDFDocument } = PDFLib
-                        const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer())
-                        const pdfDoc = await PDFDocument.load(existingPdfBytes)
+                        this.existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer())
+                        this.pdfDoc = await PDFDocument.load(this.existingPdfBytes)
 
-                        // Get form fields and their current values
-                        const form = pdfDoc.getForm()
-                        const fields = form.getFields()
-                        fields.forEach(field => {
-                            const fieldName = field.getName()
-                            const fieldValue = this.getFieldValue(field)
-                            // Store directly using field name from PDF
-                            if (fieldName in this.formData) {
-                                this.formData[fieldName] = fieldValue
-                            }
-                        })
+                        // config font thai
+                        this.pdfDoc.registerFontkit(fontkit);
+                        const thaiFontBytes = await this.getThaiFont();
+                        const customFont = await this.pdfDoc.embedFont(thaiFontBytes, { subset: false });
 
-                        const pdfBytes = await pdfDoc.save()
+                        const form = this.pdfDoc.getForm()
+                        this.setFieldValue(form)
+
+                        // apply font thai
+                        form.updateFieldAppearances(customFont);
+
+                        const pdfBytes = await this.pdfDoc.save()
                         const base64String = await this.arrayBufferToBase64(pdfBytes)
                         this.pdfSrc = `data:application/pdf;base64,${base64String}`
                     } catch (error) {
                         console.error('Error loading PDF:', error)
                     }
                 },
-                getFieldValue(field) {
-                    if (field.constructor.name === 'PDFTextField') {
-                        return field.getText() || ''
-                    } else if (field.constructor.name === 'PDFCheckBox') {
-                        return field.isChecked()
-                    } else if (field.constructor.name === 'PDFRadioGroup') {
-                        return field.getSelected() || ''
-                    }
-                    return null
-                },
                 async updatePDF() {
                     try {
-                        const { PDFDocument } = PDFLib
-                        const existingPdfBytes = await fetch('fill-form.pdf').then(res => res.arrayBuffer())
-                        const pdfDoc = await PDFDocument.load(existingPdfBytes)
+                        const form = this.pdfDoc.getForm()
 
-                        const form = pdfDoc.getForm()
+                        // config font thai
+                        this.pdfDoc.registerFontkit(fontkit);
+                        const thaiFontBytes = await this.getThaiFont();
+                        const customFont = await this.pdfDoc.embedFont(thaiFontBytes, { subset: false });
 
-                        // Update PDF form fields with current formData values
-                        const fields = form.getFields()
-                        fields.forEach(field => {
-                            const fieldName = field.getName()
-                            if (fieldName in this.formData) {
-                                this.setFieldValue(field, this.formData[fieldName])
-                            }
-                        })
+                        this.setFieldValue(form)
 
-                        const pdfBytes = await pdfDoc.save()
+                        // apply font thai
+                        form.updateFieldAppearances(customFont);
+
+                        const pdfBytes = await this.pdfDoc.save()
                         const base64String = await this.arrayBufferToBase64(pdfBytes)
                         this.pdfSrc = `data:application/pdf;base64,${base64String}`
                     } catch (error) {
                         console.error('Error updating PDF:', error)
                     }
                 },
-                setFieldValue(field, value) {
-                    try {
-                        if (field.constructor.name === 'PDFTextField') {
-                            field.setText(value || '')
-                        } else if (field.constructor.name === 'PDFCheckBox') {
-                            value ? field.check() : field.uncheck()
-                        } else if (field.constructor.name === 'PDFRadioGroup') {
-                            if (value) field.select(value)
-                        }
-                    } catch (error) {
-                        console.error(`Error setting field value: ${field.getName()}`, error)
-                    }
+                async setFieldValue(form, value) {
+                    form.getTextField('FullName').setText(this.formData.FullName)
                 },
                 logFormData() {
                     console.log('Form Data:', this.formData)
