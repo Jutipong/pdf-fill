@@ -9,18 +9,36 @@
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
     <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            /* ให้ container สูงเต็มจอ */
+            gap: 20px;
+            overflow: hidden;
+        }
+
+        /* 
         .container {
             display: flex;
             gap: 20px;
-        }
+        } */
 
-        #pdfViewer {
+        /* #pdfViewer {
             flex: 1;
-            height: 700px;
-        }
+            height: 90%;
+        } */
 
         .form-controls {
-            width: 300px;
+            width: 30%;
             padding: 20px;
             background: #f5f5f5;
         }
@@ -32,6 +50,31 @@
         label {
             display: block;
             margin-bottom: 5px;
+        }
+
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+        }
+
+        .primary-button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .secondary-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -70,13 +113,17 @@
                     <option value="Italian">Italian</option>
                 </select>
             </div>
-            <button id="logFormData">Log Form Data</button>
+            <div class="button-group">
+                <button id="saveBtn" class="primary-button">Save</button>
+                <button id="logFormData" class="secondary-button">Log Form Data</button>
+            </div>
         </div>
     </div>
 
     <script>
         let pdfDoc;
         // let existingPdfBytes;
+        const pdfPath = 'fill-form.pdf';
 
         async function getThaiFont() {
             const fontUrl = 'tahoma.ttf'; // ต้องใส่ path ให้ถูก
@@ -92,19 +139,13 @@
             return window.btoa(binary);
         }
 
-        async function displayPDF(pdfPath) {
+        async function displayPDF() {
             try {
                 const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
                 pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
 
-                pdfDoc.registerFontkit(window.fontkit);
-                const thaiFontBytes = await getThaiFont();
-                const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
+                await setFieldValue(pdfDoc);
 
-                const form = pdfDoc.getForm();
-                setFieldValue(form);
-
-                form.updateFieldAppearances(customFont);
                 renderPDF();
             } catch (error) {
                 console.error('Error loading PDF:', error);
@@ -113,26 +154,28 @@
 
         async function updatePDF() {
             try {
-                const existingPdfBytes = await fetch('fill-form.pdf').then(res => res.arrayBuffer());
+                const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
                 pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
 
-                pdfDoc.registerFontkit(window.fontkit);
-                const thaiFontBytes = await getThaiFont();
-                const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
+                await setFieldValue(pdfDoc);
 
-                const form = pdfDoc.getForm();
-                setFieldValue(form);
-
-                form.updateFieldAppearances(customFont);
                 renderPDF();
             } catch (error) {
                 console.error('Error updating PDF:', error);
             }
         }
 
-        function setFieldValue(form) {
+        async function setFieldValue(pdfDoc) {
+            pdfDoc.registerFontkit(window.fontkit);
+            const thaiFontBytes = await getThaiFont();
+            const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
+
+            const form = pdfDoc.getForm();
+
             form.getTextField('FullName').setText(document.getElementById('FullName').value || '');
             form.getTextField('FullName').enableReadOnly();
+
+            form.updateFieldAppearances(customFont);
         }
 
         async function renderPDF() {
@@ -152,17 +195,16 @@
             });
         }
 
-        // document.addEventListener('DOMContentLoaded', () => {
-        //     displayPDF('fill-form.pdf');
+        document.addEventListener('DOMContentLoaded', () => {
+            displayPDF('fill-form.pdf');
 
-        //     document.getElementById('FullName').addEventListener('input', updatePDF);
-        //     document.getElementById('ID').addEventListener('input', updatePDF);
-        //     document.querySelectorAll('input[name="Gender"]').forEach(el => el.addEventListener('change', updatePDF));
-        //     document.getElementById('Married').addEventListener('change', updatePDF);
-        //     document.getElementById('City').addEventListener('input', updatePDF);
-        //     document.getElementById('Language').addEventListener('change', updatePDF);
-        //     document.getElementById('logFormData').addEventListener('click', logFormData);
-        // });
+            // Add event listener for Save button
+            document.getElementById('saveBtn').addEventListener('click', updatePDF);
+
+            // Add event listener for Log Form Data button
+            document.getElementById('logFormData').addEventListener('click', logFormData);
+        });
+
     </script>
 </body>
 
