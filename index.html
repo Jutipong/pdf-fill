@@ -8,9 +8,10 @@
 </head>
 
 <body>
-    <iframe id="pdfViewer" width="100%" height="80%"></iframe>
+    <div id="pdf-container"></div>
+    <!-- <iframe id="pdfViewer" width="100%" height="80%"></iframe>
     <br>
-    <button onclick="getDataFormPdf()">Fill PDF</button>
+    <button onclick="getDataFormPdf()">Fill PDF</button> -->
     <!-- <p>Click the button to fill form fields in an existing PDF document with <code>pdf-lib</code></p>
     <button onclick="fillForm()">Fill PDF</button>
     <p class="small">(Your browser will download the resulting file)</p> -->
@@ -20,54 +21,43 @@
     const { PDFDocument } = PDFLib
     const fontkit = window.fontkit
 
-    async function getThaiFont() {
-        const fontUrl = 'tahoma.ttf'; // ใส่ path ของฟอนต์ภาษาไทย
-        const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
-        return fontBytes;
+    async function displayPDF(pdfPath) {
+        try {
+            // โหลด PDF file
+            const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer())
+            const pdfDoc = await PDFDocument.load(existingPdfBytes)
+
+            // แปลง PDF เป็น base64
+            const pdfBytes = await pdfDoc.save()
+            const base64String = await arrayBufferToBase64(pdfBytes)
+
+            // สร้าง URL object
+            const pdfUrl = `data:application/pdf;base64,${base64String}`
+
+            // แสดงใน HTML โดยใช้ iframe หรือ embed
+            const viewer = document.createElement('iframe')
+            viewer.src = pdfUrl
+            viewer.style.width = '100%'
+            viewer.style.height = '90%'
+            document.getElementById('pdf-container').appendChild(viewer)
+
+        } catch (error) {
+            console.error('Error loading PDF:', error)
+        }
     }
 
-    async function loadPdf() {
-        const url = 'fill-form.pdf'; // URL หรือ path ของไฟล์ PDF
-        const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-        // Set font Thai
-        pdfDoc.registerFontkit(fontkit);
-
-        const thaiFontBytes = await getThaiFont();
-        const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
-
-        // Get form และเซ็ตค่า
-        const form = pdfDoc.getForm();
-
-        const fullName = form.getTextField('FullName');
-        fullName.setText("สวัสดีครับ สวัสดีค่ะ Hello World");
-
-        form.updateFieldAppearances(customFont);
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const urlBlob = URL.createObjectURL(blob);
-
-        document.getElementById('pdfViewer').src = urlBlob;
+    // Helper function สำหรับแปลง ArrayBuffer เป็น base64
+    function arrayBufferToBase64(buffer) {
+        let binary = ''
+        const bytes = new Uint8Array(buffer)
+        for (let i = 0; i < bytes.byteLength; i++) {
+            binary += String.fromCharCode(bytes[i])
+        }
+        return window.btoa(binary)
     }
-    loadPdf();
 
+    displayPDF('fill-form.pdf')
 
-    async function getDataFormPdf() {
-        const url = 'fill-form.pdf'; // ใช้ไฟล์เดิม
-        const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-        const form = pdfDoc.getForm();
-
-        // อ่านค่าจากฟิลด์ FullName
-        const fullName = form.getTextField('FullName').getText();
-
-        // แสดงผลลัพธ์
-        console.log("Full Name:", fullName);
-        alert("ค่าที่ได้จาก PDF: " + fullName);
-    }
 
 </script>
 
