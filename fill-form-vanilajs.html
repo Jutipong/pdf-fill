@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/pdf-lib@1.11.0"></script>
     <script src="https://unpkg.com/downloadjs@1.4.7"></script>
     <script src="https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/dist/fontkit.umd.min.js"></script>
+    <script src="https://raw.githubusercontent.com/phihag/pdfform.js/dist/dist/pdfform.pdf_js.dist.js"></script>
     <style>
         html,
         body {
@@ -116,16 +117,61 @@
     <script>
         const pdfPath = 'fill-form.pdf';
         let pdfDoc;
+        let existingPdfBytes;
+
+        // async function extractFormFields() {
+        //     existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
+        //     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+        //     const form = pdfDoc.getForm();
+        //     const fields = form.getFields();
+
+        //     return fields.map(field => {
+        //         const fieldData = {
+        //             name: field.getName(),
+        //             type: field.constructor.name
+        //         };
+        //         console.log(fieldData);
+        //         return fieldData;
+        //     });
+        // }
+
+        async function extractFormFields() {
+            existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
+            const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+            const form = pdfDoc.getForm();
+            const fields = form.getFields();
+
+            formFields = fields.map(field => {
+                const fieldData = {
+                    name: field.getName(),
+                    type: field.constructor.name,
+                    // value: field.getValue(),
+                    options: field instanceof PDFLib.PDFDropdown ? field.getOptions() : null
+                };
+
+                // เพิ่ม properties เฉพาะตาม type
+                if (field instanceof PDFLib.PDFCheckBox) {
+                    fieldData.isChecked = field.isChecked();
+                }
+                if (field instanceof PDFLib.PDFRadioGroup) {
+                    fieldData.options = field.getOptions();
+                    fieldData.selected = field.getSelected();
+                }
+
+                return fieldData;
+            });
+
+            return formFields;
+        }
 
         async function loadPDF() {
-            const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
             pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             await fillPDF();
             renderPDF();
         }
 
         async function updatePDF() {
-            pdfDoc = await PDFLib.PDFDocument.load(await fetch(pdfPath).then(res => res.arrayBuffer()));
+            pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             await fillPDF();
             renderPDF();
         }
@@ -140,21 +186,25 @@
         }
 
         async function fillPDF() {
-            // register fontkit
-            pdfDoc.registerFontkit(window.fontkit);
+            try {
+                // register fontkit
+                pdfDoc.registerFontkit(window.fontkit);
 
-            // load Thai font
-            const thaiFont = await pdfDoc.embedFont(await getThaiFont());
+                // load Thai font
+                const thaiFont = await pdfDoc.embedFont(await getThaiFont());
 
-            // get fields from the PDF
-            const form = pdfDoc.getForm();
+                // get fields from the PDF
+                const form = pdfDoc.getForm();
 
-            // set field values
-            form.getTextField('FullName').setText(getFieldValue('FullName'));
-            form.getTextField('FullName').enableReadOnly();
+                // set field values
+                form.getTextField('FullName').setText(getFieldValue('FullName'));
+                form.getTextField('FullName').enableReadOnly();
 
-            // update font
-            form.updateFieldAppearances(thaiFont);
+                // update font
+                form.updateFieldAppearances(thaiFont);
+            } catch (error) {
+                console.error('Error in fillPDF:', error);
+            }
         }
 
         async function arrayBufferToBase64(buffer) {
@@ -167,9 +217,13 @@
         }
 
         async function renderPDF() {
-            const pdfBytes = await pdfDoc.save();
-            const base64String = await arrayBufferToBase64(pdfBytes);
-            document.getElementById('pdfViewer').src = `data:application/pdf;base64,${base64String}`;
+            try {
+                const pdfBytes = await pdfDoc.save();
+                const base64String = await arrayBufferToBase64(pdfBytes);
+                document.getElementById('pdfViewer').src = `data:application/pdf;base64,${base64String}`;
+            } catch (error) {
+                console.error('Error in renderPDF:', error);
+            }
         }
 
         function logFormData() {
@@ -183,12 +237,14 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.table(await extractFormFields());
+
             loadPDF();
+
             document.getElementById('saveBtn').addEventListener('click', updatePDF);
             document.getElementById('logFormData').addEventListener('click', logFormData);
         });
-
     </script>
 </body>
 
