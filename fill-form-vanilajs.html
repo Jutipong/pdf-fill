@@ -135,6 +135,35 @@
         //     });
         // }
 
+        // async function extractFormFields() {
+        //     existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
+        //     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+        //     const form = pdfDoc.getForm();
+        //     const fields = form.getFields();
+
+        //     formFields = fields.map(field => {
+        //         const fieldData = {
+        //             name: field.getName(),
+        //             type: field.constructor.name,
+        //             // value: field.getValue(),
+        //             options: field instanceof PDFLib.PDFDropdown ? field.getOptions() : null
+        //         };
+
+        //         // เพิ่ม properties เฉพาะตาม type
+        //         if (field instanceof PDFLib.PDFCheckBox) {
+        //             fieldData.isChecked = field.isChecked();
+        //         }
+        //         if (field instanceof PDFLib.PDFRadioGroup) {
+        //             fieldData.options = field.getOptions();
+        //             fieldData.selected = field.getSelected();
+        //         }
+
+        //         return fieldData;
+        //     });
+
+        //     return formFields;
+        // }
+
         async function extractFormFields() {
             existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
@@ -144,18 +173,34 @@
             formFields = fields.map(field => {
                 const fieldData = {
                     name: field.getName(),
-                    type: field.constructor.name,
-                    // value: field.getValue(),
-                    options: field instanceof PDFLib.PDFDropdown ? field.getOptions() : null
+                    type: null, // เราจะกำหนดให้ใหม่ตามเงื่อนไข
+                    options: null,
+                    isChecked: null,
+                    selected: null
                 };
 
-                // เพิ่ม properties เฉพาะตาม type
+                if (field instanceof PDFLib.PDFDropdown || field instanceof PDFLib.PDFRadioGroup) {
+                    fieldData.options = field.getOptions();
+                }
+
+                if (field instanceof PDFLib.PDFRadioGroup) {
+                    fieldData.selected = field.getSelected();
+                }
+
                 if (field instanceof PDFLib.PDFCheckBox) {
                     fieldData.isChecked = field.isChecked();
                 }
-                if (field instanceof PDFLib.PDFRadioGroup) {
-                    fieldData.options = field.getOptions();
-                    fieldData.selected = field.getSelected();
+
+                if (field instanceof PDFLib.PDFCheckBox) {
+                    fieldData.type = "CheckBox";
+                } else if (field instanceof PDFLib.PDFDropdown) {
+                    fieldData.type = "Dropdown";
+                } else if (field instanceof PDFLib.PDFRadioGroup) {
+                    fieldData.type = "RadioGroup";
+                } else if (field instanceof PDFLib.PDFButton) {
+                    fieldData.type = "Button";
+                } else {
+                    fieldData.type = "TextField";
                 }
 
                 return fieldData;
@@ -163,6 +208,7 @@
 
             return formFields;
         }
+
 
         async function loadPDF() {
             pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
