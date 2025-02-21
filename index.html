@@ -8,9 +8,9 @@
 </head>
 
 <body>
-    <iframe id="pdfViewer" width="100%" height="100%"></iframe>
+    <iframe id="pdfViewer" width="100%" height="80%"></iframe>
     <br>
-
+    <button onclick="getDataFormPdf()">Fill PDF</button>
     <!-- <p>Click the button to fill form fields in an existing PDF document with <code>pdf-lib</code></p>
     <button onclick="fillForm()">Fill PDF</button>
     <p class="small">(Your browser will download the resulting file)</p> -->
@@ -20,16 +20,13 @@
     const { PDFDocument } = PDFLib
     const fontkit = window.fontkit
 
-    // โหลดฟอนต์ภาษาไทย (ควรใช้ฟอนต์ที่รองรับ Unicode)
     async function getThaiFont() {
-        // const fontUrl = 'THSarabunNew.ttf'; // ใส่ path ของฟอนต์ภาษาไทย
         const fontUrl = 'tahoma.ttf'; // ใส่ path ของฟอนต์ภาษาไทย
         const fontBytes = await fetch(fontUrl).then(res => res.arrayBuffer());
         return fontBytes;
     }
 
     async function loadPdf() {
-        // const url = 'https://pdf-lib.js.org/assets/form_to_flatten.pdf';
         const url = 'fill-form.pdf'; // URL หรือ path ของไฟล์ PDF
         const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
 
@@ -43,32 +40,9 @@
 
         // Get form และเซ็ตค่า
         const form = pdfDoc.getForm();
-        // ✅ อัปเดตให้ทุกฟิลด์ใช้ฟอนต์เดียวกัน
-
-        // form.getTextField('Text1').setText('ทดสอบภาษาไทย');
-
-        // form.updateFieldAppearances(customFont);
-
-
-
-        // form.getTextField('Text1').setText('Some Text');
-
-        // form.getRadioGroup('Group2').select('Choice1');
-        // form.getRadioGroup('Group3').select('Choice3');
-        // form.getRadioGroup('Group4').select('Choice1');
-
-        // form.getCheckBox('Check Box3').check();
-        // form.getCheckBox('Check Box4').uncheck();
-
-        // form.getDropdown('Dropdown7').select('Infinity');
-
-        // form.getOptionList('List Box6').select('Honda');
-
-        //new test
 
         const fullName = form.getTextField('FullName');
         fullName.setText("สวัสดีครับ สวัสดีค่ะ Hello World");
-
 
         form.updateFieldAppearances(customFont);
         const pdfBytes = await pdfDoc.save();
@@ -77,86 +51,24 @@
 
         document.getElementById('pdfViewer').src = urlBlob;
     }
-
-
-    // async function loadPdf() {
-    //     const url = 'https://pdf-lib.js.org/assets/form_to_flatten.pdf'; // URL หรือ path ของไฟล์ PDF
-    //     const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-
-    //     const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-    //     // Set font thai
-    //     pdfDoc.registerFontkit(fontkit);
-
-    //     const thaiFontBytes = await getThaiFont();
-    //     const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: true });
-
-
-    //     // set value to form
-    //     const form = pdfDoc.getForm()
-    //     const nameField = form.getTextField('Text1');
-    //     // form.getTextField('Text1').setText("สวัสดีครับ สวัสดีค่ะ");
-    //     nameField.setText('ทดสอบภาษาไทย');
-    //     nameField.updateAppearances(customFont);
-
-    //     form.getRadioGroup('Group2').select('Choice1');
-    //     form.getRadioGroup('Group3').select('Choice3');
-    //     form.getRadioGroup('Group4').select('Choice1');
-
-    //     form.getDropdown('Dropdown7').select('Infinity');
-
-    //     const pdfBytes = await pdfDoc.save();
-    //     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    //     const urlBlob = URL.createObjectURL(blob);
-
-
-
-    //     document.getElementById('pdfViewer').src = urlBlob;
-
-
-
-
-    //     // Get all fields in the PDF by their names
-    //     // const nameField = form.getTextField('CharacterName 2')
-    //     // const ageField = form.getTextField('Age')
-    // }
-
     loadPdf();
 
-    async function fillForm() {
-        // Fetch the PDF with form fields
-        const formUrl = 'https://pdf-lib.js.org/assets/form_to_flatten.pdf'
-        const formPdfBytes = await fetch(formUrl).then(res => res.arrayBuffer())
 
-        // Load a PDF with form fields
-        const pdfDoc = await PDFDocument.load(formPdfBytes)
+    async function getDataFormPdf() {
+        const url = 'fill-form.pdf'; // ใช้ไฟล์เดิม
+        const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
 
-        // Get the form containing all the fields
-        const form = pdfDoc.getForm()
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const form = pdfDoc.getForm();
 
-        // Fill the form's fields
-        form.getTextField('Text1').setText('Some Text');
+        // อ่านค่าจากฟิลด์ FullName
+        const fullName = form.getTextField('FullName').getText();
 
-        form.getRadioGroup('Group2').select('Choice1');
-        form.getRadioGroup('Group3').select('Choice3');
-        form.getRadioGroup('Group4').select('Choice1');
-
-        form.getCheckBox('Check Box3').check();
-        form.getCheckBox('Check Box4').uncheck();
-
-        form.getDropdown('Dropdown7').select('Infinity');
-
-        form.getOptionList('List Box6').select('Honda');
-
-      // Flatten the form's fields
-      /* form.flatten() */;
-
-        // Serialize the PDFDocument to bytes (a Uint8Array)
-        // const pdfBytes = await pdfDoc.save()
-
-        // Trigger the browser to download the PDF document
-        // download(pdfBytes, "pdf-lib_form_flattening_example.pdf", "application/pdf");
+        // แสดงผลลัพธ์
+        console.log("Full Name:", fullName);
+        alert("ค่าที่ได้จาก PDF: " + fullName);
     }
+
 </script>
 
 </html>
