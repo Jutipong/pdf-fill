@@ -121,13 +121,47 @@
     </div>
 
     <script>
-        let pdfDoc;
-        // let existingPdfBytes;
         const pdfPath = 'fill-form.pdf';
+        let pdfDoc;
+
+        async function loadPDF() {
+            const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
+            pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
+            await fillPDF();
+            renderPDF();
+        }
+
+        async function updatePDF() {
+            pdfDoc = await PDFLib.PDFDocument.load(await fetch(pdfPath).then(res => res.arrayBuffer()));
+            await fillPDF();
+            renderPDF();
+        }
 
         async function getThaiFont() {
-            const fontUrl = 'tahoma.ttf'; // ต้องใส่ path ให้ถูก
+            const fontUrl = 'tahoma.ttf';
             return await fetch(fontUrl).then(res => res.arrayBuffer());
+        }
+
+        function getFieldValue(id) {
+            return document.getElementById(id)?.value || '';
+        }
+
+        async function fillPDF() {
+            // register fontkit
+            pdfDoc.registerFontkit(window.fontkit);
+
+            // load Thai font
+            const thaiFont = await pdfDoc.embedFont(await getThaiFont());
+
+            // get fields from the PDF
+            const form = pdfDoc.getForm();
+
+            // set field values
+            form.getTextField('FullName').setText(getFieldValue('FullName'));
+            form.getTextField('FullName').enableReadOnly();
+
+            // update font
+            form.updateFieldAppearances(thaiFont);
         }
 
         async function arrayBufferToBase64(buffer) {
@@ -139,45 +173,6 @@
             return window.btoa(binary);
         }
 
-        async function displayPDF() {
-            try {
-                const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
-                pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-
-                await setFieldValue(pdfDoc);
-
-                renderPDF();
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-            }
-        }
-
-        async function updatePDF() {
-            try {
-                const existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
-                pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-
-                await setFieldValue(pdfDoc);
-
-                renderPDF();
-            } catch (error) {
-                console.error('Error updating PDF:', error);
-            }
-        }
-
-        async function setFieldValue(pdfDoc) {
-            pdfDoc.registerFontkit(window.fontkit);
-            const thaiFontBytes = await getThaiFont();
-            const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
-
-            const form = pdfDoc.getForm();
-
-            form.getTextField('FullName').setText(document.getElementById('FullName').value || '');
-            form.getTextField('FullName').enableReadOnly();
-
-            form.updateFieldAppearances(customFont);
-        }
-
         async function renderPDF() {
             const pdfBytes = await pdfDoc.save();
             const base64String = await arrayBufferToBase64(pdfBytes);
@@ -185,7 +180,7 @@
         }
 
         function logFormData() {
-            console.log('Form Data:', {
+            console.table({
                 FullName: document.getElementById('FullName').value,
                 ID: document.getElementById('ID').value,
                 Gender: document.querySelector('input[name="Gender"]:checked')?.value || '',
@@ -196,12 +191,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            displayPDF('fill-form.pdf');
-
-            // Add event listener for Save button
+            loadPDF();
             document.getElementById('saveBtn').addEventListener('click', updatePDF);
-
-            // Add event listener for Log Form Data button
             document.getElementById('logFormData').addEventListener('click', logFormData);
         });
 
