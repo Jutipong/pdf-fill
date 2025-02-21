@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Markdown Editor</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.js"></script>
+    <script src="https://unpkg.com/vue-pdf-embed@1.1.4/dist/vue2-pdf-embed.js"></script>
+</head>
+
+<body>
+
+    <div id="app">
+        <div class="app-content">
+            <vue-pdf-embed ref="pdfRef" :source="pdfSource" />
+        </div>
+    </div>
+
+    <script>
+
+        new Vue({
+            el: '#app',
+            components: {
+                VuePdfEmbed: window.VuePdfEmbed,
+            },
+            data() {
+                return {
+                    isLoading: true,
+                    page: null,
+                    pageCount: 1,
+                    // pdfSource: 'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/web/compressed.tracemonkey-pldi-09.pdf',
+                    pdfSource: 'fill-form.pdf',
+                    showAllPages: true,
+                }
+            },
+            methods: {
+
+
+            }
+        })
+
+
+    </script>
+
+</body>
+
+</html>
