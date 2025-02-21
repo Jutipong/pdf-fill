@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive PDF Form</title>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        // ✅ แก้ปัญหา workerSrc ไม่ถูกกำหนด
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+    <style>
+        #pdfContainer {
+            width: 100%;
+            height: 600px;
+            border: 1px solid black;
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>Interactive PDF Form (Real-Time)</h2>
+    <input type="file" id="uploadPdf" accept="application/pdf">
+    <div id="pdfContainer"></div>
+
+    <button onclick="extractFormData()">Get Form Data</button>
+    <pre id="output"></pre>
+
+    <script>
+        let pdfDoc = null;
+        let form = null;
+
+        document.getElementById("uploadPdf").addEventListener("change", async function (event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const pdfBytes = await file.arrayBuffer();
+            pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+            form = pdfDoc.getForm();
+
+            displayPDF(pdfBytes);
+        });
+
+        function displayPDF(pdfBytes) {
+            const container = document.getElementById("pdfContainer");
+            container.innerHTML = "";
+            const iframe = document.createElement("iframe");
+            iframe.style.width = "100%";
+            iframe.style.height = "100%";
+            iframe.src = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+            container.appendChild(iframe);
+        }
+
+        async function extractFormData() {
+            if (!form) {
+                alert("กรุณาอัปโหลด PDF ก่อน");
+                return;
+            }
+
+            const fields = form.getFields();
+            const jsonData = {};
+
+            fields.forEach(field => {
+                const name = field.getName();
+                try {
+                    const value = field.getText ? field.getText() : "";
+                    jsonData[name] = value;
+                } catch (error) {
+                    jsonData[name] = "(Unsupported Field)";
+                }
+            });
+
+            document.getElementById("output").textContent = JSON.stringify(jsonData, null, 2);
+        }
+    </script>
+</body>
+
+</html>
