@@ -9,12 +9,7 @@
 
 <body>
     <div id="pdf-container"></div>
-    <!-- <iframe id="pdfViewer" width="100%" height="80%"></iframe>
-    <br>
-    <button onclick="getDataFormPdf()">Fill PDF</button> -->
-    <!-- <p>Click the button to fill form fields in an existing PDF document with <code>pdf-lib</code></p>
-    <button onclick="fillForm()">Fill PDF</button>
-    <p class="small">(Your browser will download the resulting file)</p> -->
+    <button onclick="getDataFormPdf()">Fill PDF</button>
 </body>
 
 <script>
@@ -56,7 +51,7 @@
         return window.btoa(binary)
     }
 
-    displayPDF('example_014.pdf')
+    displayPDF('fill-form.pdf')
 
 </script>
 

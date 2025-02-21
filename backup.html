@@ -10,7 +10,7 @@
 <body>
     <iframe id="pdfViewer" width="100%" height="80%"></iframe>
     <br>
-    <button onclick="getDataFormPdf()">Fill PDF</button>
+    <button onclick="getDataFormPdf()">getDataFormPdf</button>
     <!-- <p>Click the button to fill form fields in an existing PDF document with <code>pdf-lib</code></p>
     <button onclick="fillForm()">Fill PDF</button>
     <p class="small">(Your browser will download the resulting file)</p> -->
@@ -48,43 +48,42 @@
     }
     loadPdf()
 
+    // async function getDataFormPdf() {
+    //     const url = 'fill-form.pdf';
+    //     const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
+    //     const pdfDoc = await PDFDocument.load(existingPdfBytes);
+    //     const form = pdfDoc.getForm();
+    //     const fullName = form.getTextField('FullName').getText();
+    //     console.log("Full Name:", fullName);
+    //     alert("ค่าที่ได้จาก PDF: " + fullName);
+    // }
+
     async function getDataFormPdf() {
         const url = 'fill-form.pdf';
         const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const form = pdfDoc.getForm();
-        const fullName = form.getTextField('FullName').getText();
-        console.log("Full Name:", fullName);
-        alert("ค่าที่ได้จาก PDF: " + fullName);
-    }
 
-    async function resetForm() {
-        const url = 'fill-form.pdf';
-        const existingPdfBytes = await fetch(url).then(res => res.arrayBuffer());
-        const pdfDoc = await PDFDocument.load(existingPdfBytes);
-
-        // Set font Thai
-        pdfDoc.registerFontkit(fontkit);
-        const thaiFontBytes = await getThaiFont();
-        const customFont = await pdfDoc.embedFont(thaiFontBytes, { subset: false });
-
-        // Get form and reset all fields
-        const form = pdfDoc.getForm();
+        // แสดงชื่อฟิลด์ทั้งหมดที่อยู่ในฟอร์ม
         const fields = form.getFields();
         fields.forEach(field => {
-            if (field.constructor.name === 'PDFTextField') {
-                field.setText('');
-            } else if (field.constructor.name === 'PDFCheckBox') {
-                field.check();
-            }
+            debugger;
+            console.log(field.getText());
+            // console.log(`Field Name: ${field.getName()}, Value: ${field instanceof PDFTextField ? field.getText() : 'N/A'}`);
         });
 
-        form.updateFieldAppearances(customFont);
-        const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const urlBlob = URL.createObjectURL(blob);
-        document.getElementById('pdfViewer').src = urlBlob;
+        // ลองอ่านค่า FullName
+        const fullNameField = form.getTextField('FullName');
+        if (fullNameField) {
+            const fullName = fullNameField.getText();
+            console.log("Full Name:", fullName);
+            alert("ค่าที่ได้จาก PDF: " + fullName);
+        } else {
+            console.log("ไม่พบฟิลด์ชื่อ FullName");
+            alert("ไม่พบฟิลด์ชื่อ FullName");
+        }
     }
+
 </script>
 
 </html>
