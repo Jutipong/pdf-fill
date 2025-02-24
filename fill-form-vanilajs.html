@@ -119,51 +119,6 @@
         let pdfDoc;
         let existingPdfBytes;
 
-        // async function extractFormFields() {
-        //     existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
-        //     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-        //     const form = pdfDoc.getForm();
-        //     const fields = form.getFields();
-
-        //     return fields.map(field => {
-        //         const fieldData = {
-        //             name: field.getName(),
-        //             type: field.constructor.name
-        //         };
-        //         console.log(fieldData);
-        //         return fieldData;
-        //     });
-        // }
-
-        // async function extractFormFields() {
-        //     existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
-        //     const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
-        //     const form = pdfDoc.getForm();
-        //     const fields = form.getFields();
-
-        //     formFields = fields.map(field => {
-        //         const fieldData = {
-        //             name: field.getName(),
-        //             type: field.constructor.name,
-        //             // value: field.getValue(),
-        //             options: field instanceof PDFLib.PDFDropdown ? field.getOptions() : null
-        //         };
-
-        //         // เพิ่ม properties เฉพาะตาม type
-        //         if (field instanceof PDFLib.PDFCheckBox) {
-        //             fieldData.isChecked = field.isChecked();
-        //         }
-        //         if (field instanceof PDFLib.PDFRadioGroup) {
-        //             fieldData.options = field.getOptions();
-        //             fieldData.selected = field.getSelected();
-        //         }
-
-        //         return fieldData;
-        //     });
-
-        //     return formFields;
-        // }
-
         async function extractFormFields() {
             existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
             const pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
