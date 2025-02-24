@@ -164,8 +164,8 @@
             return formFields;
         }
 
-
         async function loadPDF() {
+            existingPdfBytes = await fetch(pdfPath).then(res => res.arrayBuffer());
             pdfDoc = await PDFLib.PDFDocument.load(existingPdfBytes);
             await fillPDF();
             renderPDF();
@@ -239,10 +239,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            console.table(await extractFormFields());
-
+            // console.table(await extractFormFields());
             loadPDF();
-
             document.getElementById('saveBtn').addEventListener('click', updatePDF);
             document.getElementById('logFormData').addEventListener('click', logFormData);
         });
